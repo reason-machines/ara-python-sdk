@@ -5377,7 +5377,17 @@ def run_auth_cli(argv: Optional[list[str]] = None) -> None:
         }
         credentials_updated = False
         if os.getenv("ARA_API_KEY", "").strip() or os.getenv("ARA_ACCESS_TOKEN", "").strip():
-            out["warning"] = "Your ARA_API_KEY environment variable still holds the old key. Update it to: " + new_key
+            # Never print the new key: store it in the 0600 credentials file and
+            # point the user there, since the old key no longer works.
+            _save_cli_credentials(
+                {"auth_type": "cli_api_key", "api_base_url": api_base_url, "api_key": new_key}
+            )
+            credentials_updated = True
+            out["warning"] = (
+                "Your ARA_API_KEY environment variable still holds the old key. "
+                f"The new key is saved in {_cli_credentials_path()} (field api_key); "
+                "update ARA_API_KEY from there, or unset it to use the saved key."
+            )
         else:
             creds = _load_cli_credentials()
             if str(creds.get("auth_type") or "").strip() == "cli_api_key":
